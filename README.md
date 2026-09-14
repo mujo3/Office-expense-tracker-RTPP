@@ -207,7 +207,7 @@ Za Sprint 0 ulogu Product Ownera imao je Edin Ahmetbegović, a Scrum Mastera Emi
 
 **Alati:** Jira (backlog i sprintovi), Figma (dizajn sučelja), Discord i Messenger (komunikacija unutar tima).
 
-- [Figma mockup]([https://www.figma.com/design/IV4r8BYNYd0j2BIlpiNvn1/Soldy](https://www.figma.com/design/IV4r8BYNYd0j2BIlpiNvn1/Soldy?node-id=2-2&t=yzCT0D0PuiEwkXmX-1))
+- [Figma mockup]([https://www.figma.com/design/IV4r8BYNYd0j2BIlpiNvn1/Soldy](https://www.figma.com/design/IV4r8BYNYd0j2BIlpiNvn1/Soldy?node-id=2-2&t=yzCT0D0PuiEwkXmX-1)
 
 ---
 
