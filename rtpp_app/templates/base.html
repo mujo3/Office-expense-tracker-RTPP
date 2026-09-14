@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Expense Tracker{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <div class="top-navbar">
+    <div class="navbar-brand">
+      <h2>Office expense tracker – HTEC Tuzla</h2>
+    </div>
+    <div class="navbar-nav">
+      {% if current_user.is_authenticated %}
+      {%  if current_user.is_admin %}
+        <a href="{{ url_for('admin.users') }}" class="nav-link">Admin Panel</a>
+      {%  endif %}
+        <a href="{{ url_for('main.dashboard') }}" class="nav-link">Dashboard</a>
+        <a href="{{ url_for('auth.logout') }}" class="nav-link logout-btn">Logout</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="nav-link">Login</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="main-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul id="flash-messages" class="flashes">
+        {% for category, msg in messages %}
+          <li class="{{ category }}">{{ msg }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+
+    {% block content %}{% endblock %}
+  </div>
+<script src="{{ url_for('static', filename='js/flash.js') }}"></script>
+</body>
+</html>

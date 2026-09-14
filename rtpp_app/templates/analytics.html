@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Analitika{% endblock %}
+
+{% block content %}
+<style>
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 30px;
+    margin-bottom: 30px;
+  }
+
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  thead {
+    background-color: #f2f2f2;
+  }
+
+  table + h3 {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 2px solid #ddd;
+  }
+</style>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+
+<div class="dashboard-container">
+  <div class="sidebar">
+    <div class="logo-section">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="HTEC Logo">
+      </div>
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item"><a href="{{ url_for('main.dashboard') }}" class="nav-link"><div class="nav-icon">📊</div> Dashboard</a></li>
+      <li class="nav-item"><a href="{{ url_for('reports.reports_dashboard') }}" class="nav-link"><div class="nav-icon">📋</div> Reports</a></li>
+      <li class="nav-item"><a href="{{ url_for('main.analytics') }}" class="nav-link active"><div class="nav-icon">📈</div> Analytics</a></li>
+      {% if current_user.is_admin %}
+      <li class="nav-item">
+        <a href="{{ url_for('admin.users') }}" class="nav-link">
+          <div class="nav-icon">⚙️</div> Settings
+        </a>
+      </li>
+      {% else %}
+      <li class="nav-item">
+        <div class="nav-icon">⚙️</div> Settings
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <h1>Analitika</h1>
+
+    <form method="get" action="{{ url_for('main.analytics') }}" class="filter-form">
+      <label>Od: <input type="date" name="start_date" value="{{ start_date }}"></label>
+      <label>Do: <input type="date" name="end_date" value="{{ end_date }}"></label>
+      <button type="submit" class="btn-submit">Filtriraj</button>
+    </form>
+
+    <h3>Potrošnja po kategorijama</h3>
+    <table class="styled-table">
+      <thead>
+        <tr><th>Kategorija</th><th>Ukupno potrošeno</th></tr>
+      </thead>
+      <tbody>
+        {% for name, total in category_data %}
+        <tr>
+          <td>{{ name }}</td>
+          <td>{{ total }} KM</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h3>Potrošnja po vendorima</h3>
+    <table class="styled-table">
+      <thead>
+        <tr><th>Vendor</th><th>Ukupno potrošeno</th></tr>
+      </thead>
+      <tbody>
+        {% for name, total in vendor_data %}
+        <tr>
+          <td>{{ name }}</td>
+          <td>{{ total }} KM</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="charts-container" style="display: flex; gap: 40px; margin-top: 40px;">
+  	<canvas id="categoryChart" style="width: 500px !important; height: 400px !important;"></canvas>
+  	<canvas id="vendorChart" style="width: 500px !important; height: 400px !important;"></canvas>
+    </div>
+
+
+    <h3>Budžeti po kategorijama</h3>
+    {% if budget_data %}
+    <table class="styled-table">
+      <thead>
+        <tr><th>Kategorija</th><th>Ukupna potrošnja</th><th>Budžet</th></tr>
+      </thead>
+      <tbody>
+        {% for name, total_spent, budget in budget_data %}
+        <tr>
+          <td>{{ name }}</td>
+          <td>{{ total_spent }} KM</td>
+          <td>{{ budget }} KM</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>Nema podataka o budžetima.</p>
+    {% endif %}
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const categoryChart = new Chart(document.getElementById('categoryChart'), {
+    type: 'pie',
+    data: {
+      labels: {{ category_data|map(attribute=0)|list|tojson }},
+      datasets: [{
+        data: {{ category_data|map(attribute=1)|list|tojson }},
+        backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0']
+      }]
+    },
+    options: {
+      responsive: false,
+      maintainAspectRatio: false
+    }
+  });
+
+  const vendorChart = new Chart(document.getElementById('vendorChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ vendor_data|map(attribute=0)|list|tojson }},
+      datasets: [{
+        label: 'Potrošnja',
+        data: {{ vendor_data|map(attribute=1)|list|tojson }},
+        backgroundColor: '#36a2eb'
+      }]
+    },
+    options: {
+      responsive: false,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

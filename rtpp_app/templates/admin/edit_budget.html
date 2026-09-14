@@ -1,0 +1,19 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="card">
+  <h2>Edit Budget</h2>
+  <form method="POST">
+    <div class="form-group">
+      <label>Category</label>
+      <input type="text" value="{{ budget.category.name }}" disabled>
+    </div>
+    <div class="form-group">
+      <label>Amount (KM)</label>
+      <input type="number" name="amount" step="0.01" value="{{ budget.total_value }}" required>
+    </div>
+    <button type="submit" class="btn-green">Update</button>
+    <a href="{{ url_for('admin.budgets') }}" class="btn btn-grey" style="margin-left:1rem;">Cancel</a>
+  </form>
+</div>
+{% endblock %}

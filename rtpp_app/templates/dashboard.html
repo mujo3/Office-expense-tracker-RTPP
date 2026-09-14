@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+
+<div class="dashboard-container">
+  <div class="sidebar">
+    <div class="logo-section">
+      <div class="logo">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="HTEC Logo">
+      </div>
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item"><a href="#" class="nav-link active"><div class="nav-icon">📊</div> Dashboard</a></li>
+      <li class="nav-item"><a href="{{ url_for('reports.reports_dashboard') }}" class="nav-link"><div class="nav-icon">📋</div>Reports</a></li>
+      <li class="nav-item"><a href="{{ url_for('main.analytics') }}" class="nav-link"><div class="nav-icon">📈</div> Analytics</a></li>
+      {%  if current_user.is_admin %}
+      <li class="nav-item">
+        <a href="{{ url_for('admin.users') }}" class="nav-link">
+            <div class="nav-icon">⚙️</div> Settings
+        </a>
+      </li>
+      {%  else %}
+      <li class="nav-item">
+            <div class="nav-icon">⚙️</div> Settings
+      </li>
+      {%  endif %}
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <!-- Budgets -->
+    <div class="budget-section">
+      {% if budgets %}
+        {% set total_budget = budgets | sum(attribute='total_value') %}
+        {% set total_spent = budgets | sum(attribute='spent_value') %}
+        {% set total_left = total_budget - total_spent %}
+        <div class="budget-card total-budget">
+          <div class="budget-label">Total budget</div>
+          <div class="budget-amount">KM {{ '%.2f' % total_budget }}</div>
+          <div class="budget-subtitle">KM {{ '%.2f' % total_left }} leftover</div>
+        </div>
+        {% for b in budgets %}
+        <div class="budget-card">
+          <div class="budget-label">{{ b.category_name }}</div>
+          <div class="budget-amount">KM {{ '%.2f' % b.total_value }}</div>
+          <div class="budget-spent">Spent: KM {{ '%.2f' % b.spent_value }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="budget-card total-budget">
+          <div class="budget-label">Total budget</div>
+          <div class="budget-amount">KM 0.00</div>
+          <div class="budget-subtitle">No budgets set</div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="content-layout">
+      <div class="form-section">
+        <h2 class="form-title">Invoice / Expense Entry</h2>
+        <form id="invoice-form"
+              action="{{ url_for('expenses.invoice_entry') }}"
+              method="post"
+              enctype="multipart/form-data">
+          {{ form.hidden_tag() }}
+
+          <div class="steps-indicator">
+            <div class="step active">1. Invoice Details</div>
+            <div class="step">2. Vendor &amp; Category</div>
+            <div class="step">3. Line Items</div>
+          </div>
+
+  <!-- Step 1 -->
+          <fieldset class="form-step active" data-step="1">
+            <legend>Invoice Details</legend>
+            <div class="form-group">
+              {{ form.invoice_number.label }}
+              <span class="tooltip" data-tooltip="Enter the exact invoice number">?</span>
+              {{ form.invoice_number(class="form-input") }}
+            </div>
+            <div class="form-group">
+              {{ form.fiscal_number.label }}
+              <span class="tooltip" data-tooltip="Fiscal receipt number">?</span>
+              {{ form.fiscal_number(class="form-input") }}
+            </div>
+            <div class="form-group">
+              {{ form.order_number.label }}
+              <span class="tooltip" data-tooltip="Enter the order number">?</span>
+              {{ form.order_number(class="form-input") }}
+            </div>
+            <div class="form-group-inline">
+              <div>
+                {{ form.date_of_issue.label }}
+                <span class="tooltip" data-tooltip="Select date of issue">?</span>
+                {{ form.date_of_issue(class="form-input date-input") }}
+              </div>
+              <div>
+                {{ form.date_of_delivery.label }}
+                <span class="tooltip" data-tooltip="Select date of delivery">?</span>
+                {{ form.date_of_delivery(class="form-input date-input") }}
+              </div>
+              <div>
+                {{ form.due_date.label }}
+                <span class="tooltip" data-tooltip="Select due date">?</span>
+                {{ form.due_date(class="form-input date-input") }}
+              </div>
+            </div>
+            <button type="button" class="btn-next">Next</button>
+          </fieldset>
+
+          <!-- Step 2 -->
+          <fieldset class="form-step" data-step="2">
+            <legend>Vendor &amp; Category</legend>
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+              <div style="flex: 1;">
+                {{ form.vendor.label }}
+                <span class="tooltip" data-tooltip="Select an existing vendor or add a new one">?</span>
+                {{ form.vendor(class="form-select", id="vendor-select") }}
+              </div>
+              <button type="button" id="btn-add-vendor" class="btn-action">+ Add Vendor</button>
+            </div>
+            <div class="form-group">
+              {{ form.category.label }}
+              <span class="tooltip" data-tooltip="Select expense category">?</span>
+              {{ form.category(class="form-select") }}
+            </div>
+            <div class="form-group">
+              {{ form.place_of_issue.label }}
+              <span class="tooltip" data-tooltip="Enter the place of issue">?</span>
+              {{ form.place_of_issue(class="form-input") }}
+            </div>
+            <div class="form-group">
+              {{ form.payment_method.label }}
+              <span class="tooltip" data-tooltip="Select the payment method">?</span>
+              {{ form.payment_method(class="form-select") }}
+            </div>
+            <div class="form-group">
+              {{ form.reference.label }}
+              <span class="tooltip" data-tooltip="Enter reference or additional notes">?</span>
+              {{ form.reference(class="form-input") }}
+            </div>
+            <button type="button" class="btn-prev">Previous</button>
+            <button type="button" class="btn-next">Next</button>
+          </fieldset>
+          <!-- Step 3 -->
+          <fieldset class="form-step" data-step="3">
+            <legend>Line Items</legend>
+            <div id="items-container">
+              <div
+                class="item-row"
+                style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;"
+              >
+                <!-- Product Name input -->
+                <input
+                  type="text"
+                  name="product_name[]"
+                  class="form-input small"
+                  placeholder="Product Name"
+                  required
+                />
+                <!-- Measuring Unit input -->
+                <input
+                  type="text"
+                  name="measuring_unit[]"
+                  class="form-input small"
+                  placeholder="Measuring Unit"
+                  required
+                />
+                <input
+                  type="text"
+                  name="product_code[]"
+                  class="form-input small"
+                  placeholder="Code"
+                />
+                <input
+                  type="number"
+                  step="1"
+                  name="quantity[]"
+                  class="form-input small qty-input"
+                  placeholder="Qty"
+                />
+                <input
+                  type="number"
+                  step="any"
+                  name="unit_price_excl_vat[]"
+                  class="form-input small price-input"
+                  placeholder="Price excl. VAT"
+                />
+                <input
+                  type="number"
+                  step="any"
+                  name="vat_rate[]"
+                  class="form-input small vat-input"
+                  placeholder="VAT %"
+                />
+                <input
+                  type="number"
+                  step="any"
+                  name="discount[]"
+                  class="form-input small discount-input"
+                  placeholder="Discount"
+                />
+                <button type="button" class="remove-item btn-action">–</button>
+              </div>
+            </div>
+            <div class="form-buttons">
+              <button type="button" class="btn-prev">Previous</button>
+              <button type="button" id="add-item" class="btn-action">+ Add Item</button>
+              <button type="submit" class="btn-submit btn-success">Submit Invoice</button>
+            </div>
+          </fieldset>
+
+          <!-- Invoice Photo upload -->
+          <div class="photo-upload-wrapper">
+            <label for="upload-photo" class="upload-box">
+              <svg class="upload-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 16v-8m0 0-3 3m3-3 3 3M4 16.75V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2.25"/>
+                <path d="M4 12.75V9a4 4 0 0 1 4-4h.5M20 12.75V9a4 4 0 0 0-4-4h-.5"/>
+              </svg>
+              <span class="upload-text">Drag &amp; drop or&nbsp;<u>click</u> to add invoice photo</span>
+              {{ form.photo(class="photo-input", id="upload-photo") }}
+            </label>
+            <img id="photo-preview" class="photo-preview" src="" alt="" hidden>
+          </div>
+        </form>
+      </div>
+
+<!-- ===== Budget Left progress (col-2) ========================== -->
+<div class="budget-progress">
+  <h3 class="progress-title">Budget Left</h3>
+
+  {% for b in budgets %}
+    {# izračun preostalog i potrošenog #}
+    {% set remaining = b.total_value - b.spent_value %}
+    {% if b.total_value > 0 %}
+      {% set pct = (remaining / b.total_value * 100)|round(0) %}
+      {% set spent_pct = (b.spent_value / b.total_value * 100) %}
+    {% else %}
+      {% set pct = 0 %}
+      {% set spent_pct = 0 %}
+    {% endif %}
+
+    {# odabir boje prema potrošnji #}
+    {% if spent_pct <= 50 %}
+      {% set color = 'green' %}
+    {% elif spent_pct <= 80 %}
+      {% set color = 'yellow' %}
+    {% else %}
+      {% set color = 'red' %}
+    {% endif %}
+
+    <div class="progress-item">
+      <!-- budget warning -->
+      <div class="progress-circle {{ color }}">{{ pct }}%</div>
+      <div class="progress-subtitle">{{ '%.2f' % remaining }} KM</div>
+      <div class="progress-category">{{ b.category_name }}</div>
+
+      {% set user_role = current_user.user_role or current_user.userRole or current_user.role %}
+      {% if user_role == 'admin' %}
+        <a href="{{ url_for('admin.budgets') }}" class="progress-arrow">→</a>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+
+      {% if recent_invoices %}
+      <div class="recent-section">
+        <h3 class="recent-title">Recently entered invoices</h3>
+
+        <label class="filter-label">
+        Filter by category:
+        <select id="filter-cat">
+          <option value="all">All</option>
+          {% for c in categories_filter %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        </label>
+        <table class="recent-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Invoice №</th>
+              <th>Date</th>
+              <th>Vendor</th>
+              <th>Category</th>
+              <th style="text-align:right">Total KM</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inv in recent_invoices %}
+            <tr data-cat="{{ inv.category_id }}">
+              <td>{{ loop.index }}</td>
+              <td>{{ inv.invoice_number }}</td>
+              <td>{{ inv.date_issue.strftime('%Y-%m-%d') }}</td>
+              <td>{{ inv.vendor.vendor_name }}</td>
+              <td>{{ inv.category.name }}</td>
+              <td style="text-align:right;">{{ '%.2f'|format(inv.total_incl_vat or 0) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+</div>
+
+<!-- Add vendor pop-up -->
+<div id="modal-add-vendor" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Add New Vendor</h3>
+      <button type="button" class="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="vendor-form" method="post" action="{{ url_for('expenses.invoice_entry') }}">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+          <label for="new_vendor_name">Name*</label>
+          <input type="text" name="new_vendor_name" id="new_vendor_name" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label for="new_vendor_pdv">VAT Number*</label>
+          <input type="text" name="new_vendor_pdv" id="new_vendor_pdv" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label for="new_vendor_account">Account Number*</label>
+          <input type="text" name="new_vendor_account" id="new_vendor_account" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label for="new_vendor_bank">Bank*</label>
+          <input type="text" name="new_vendor_bank" id="new_vendor_bank" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label for="new_vendor_address">Address*</label>
+          <input type="text" name="new_vendor_address" id="new_vendor_address" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label for="new_vendor_city">City*</label>
+          <input type="text" name="new_vendor_city" id="new_vendor_city" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label for="new_vendor_telephone">Telephone</label>
+          <input type="text" name="new_vendor_telephone" id="new_vendor_telephone" class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="new_vendor_email">Email</label>
+          <input type="email" name="new_vendor_email" id="new_vendor_email" class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="new_vendor_transact">Transaction Account</label>
+          <input type="text" name="new_vendor_transact" id="new_vendor_transact" class="form-input">
+        </div>
+        <div class="form-group form-checkbox">
+          <label><input type="checkbox" name="new_vendor_supports_avans" id="new_vendor_supports_avans"> Supports Avans</label>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="modal-close btn-action">Cancel</button>
+      <button type="submit" form="vendor-form" class="btn-submit">Save Vendor</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  const steps=[...document.querySelectorAll('.form-step')],
+        ctrls=[...document.querySelectorAll('.step')];
+  let cur=0; const show=i=>{steps.forEach((s,k)=>s.classList.toggle('active',k===i));
+                             ctrls.forEach((c,k)=>c.classList.toggle('active',k===i));};
+  show(cur);
+  document.querySelectorAll('.btn-next').forEach(b=>b.addEventListener('click',()=>cur<steps.length-1&&show(++cur)));
+  document.querySelectorAll('.btn-prev').forEach(b=>b.addEventListener('click',()=>cur>0&&show(--cur)));
+
+  const items=document.getElementById('items-container');
+  document.getElementById('add-item').addEventListener('click',()=>{
+    const r=items.querySelectorAll('.item-row'); if(r.length>=20) return;
+    const c=r[0].cloneNode(true); c.querySelectorAll('input').forEach(i=>(i.value='')); items.appendChild(c);});
+  items.addEventListener('click',e=>{if(e.target.classList.contains('remove-item')){
+    const r=items.querySelectorAll('.item-row'); if(r.length>1) e.target.closest('.item-row').remove();}});
+
+
+  const vModal=document.getElementById('modal-add-vendor');
+  document.getElementById('btn-add-vendor').addEventListener('click',()=>vModal.style.display='flex');
+  document.querySelectorAll('.modal-close').forEach(c=>c.addEventListener('click',()=>vModal.style.display='none'));
+  window.addEventListener('click',e=>{if(e.target===vModal)vModal.style.display='none';});
+
+  /* 4. OCR auto-fill */
+  const up=document.getElementById('upload-photo');
+  if(up){
+    up.addEventListener('change',async ev=>{
+      const f=ev.target.files[0]; if(!f) return;
+      const fd=new FormData(); fd.append('photo',f);
+      const btn=document.querySelector('.btn-submit'); btn.disabled=true; btn.textContent='Detecting…';
+      try{
+        const res=await fetch('/expenses/invoice-ocr',{method:'POST',body:fd});
+        if(!res.ok) throw new Error(`HTTP ${res.status}`); const data=await res.json();
+        console.log('OCR data',data);
+
+        /* header */
+        setVal('invoice_number',data.invoice_number);
+        setVal('fiscal_number', data.fiscal_receipt_no);
+        setVal('place_of_issue',data.place_issue);
+        setSel('payment_method',data.payment_method);
+
+        /* vendor */
+        if(data.vendor_name){
+          const sel=document.getElementById('vendor-select');
+          const opt=[...sel.options].find(o=>o.textContent.trim().toLowerCase()===data.vendor_name.toLowerCase());
+          if(opt) sel.value=opt.value;
+        }
+
+        /* dates */
+        [['date_issue','date_of_issue'],['date_delivery','date_of_delivery'],['due_date','due_date']]
+          .forEach(([src,dst])=>{
+            if(data[src]){
+              const [d,m,y]=data[src].split('.'); setVal(dst,`${y}-${m}-${d}`);}});
+
+        /* total & PDV */
+        setVal('total_excl_vat',data.total_excl_vat);
+        setVal('vat_amount',    data.vat_amount);
+
+        /* items */
+        if(Array.isArray(data.items)&&data.items.length){
+          items.querySelectorAll('.item-row').forEach((r,i)=>{if(i)r.remove();});
+          const base=items.querySelector('.item-row');
+          data.items.forEach((it,idx)=>{
+            const row=idx?base.cloneNode(true):base;
+            row.querySelector('input[name="product_code[]"]').value       =it.product_code;
+            row.querySelector('input[name="product_name[]"]').value       =it.product_name;
+            row.querySelector('input[name="measuring_unit[]"]').value     =it.measuring_unit;
+            row.querySelector('input[name="unit_price_excl_vat[]"]').value=it.unit_price_excl_vat;
+            row.querySelector('input[name="quantity[]"]').value           =it.quantity;
+            row.querySelector('input[name="vat_rate[]"]').value           =it.vat_rate||17;
+            if(idx) items.appendChild(row);
+          });
+        }
+      }catch(err){alert('OCR failed – fill manually');console.error(err);}
+      finally{btn.disabled=false;btn.textContent='Submit Invoice';}
+    });
+  }
+  function setVal(name,v){const el=document.querySelector(`input[name="${name}"]`); if(el&&v) el.value=v;}
+  function setSel(name,v){const s=document.querySelector(`select[name="${name}"]`); if(s&&v) s.value=v;}
+});
+
+const filt=document.getElementById('filter-cat');
+if(filt) filt.addEventListener('change',e=>{
+  const v=e.target.value; document.querySelectorAll('.recent-table tbody tr')
+    .forEach(tr=>tr.style.display=v==='all'||tr.dataset.cat===v?'':'none');});
+/* --- mini preview invoice photo --- */
+document.getElementById('upload-photo').addEventListener('change', e => {
+  const file = e.target.files[0];
+  const prev = document.getElementById('photo-preview');
+  if (file) {
+    prev.src = URL.createObjectURL(file);
+    prev.hidden = false;
+    e.target.style.pointerEvents = 'none';
+  } else {
+    prev.hidden = true;
+    e.target.style.pointerEvents = 'auto';
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,35 @@
+# Okruzenje i tajne
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Baza i backupi
+*.db
+*.sqlite3
+*.dump
+*.sql
+
+# Uploadovane fakture (korisnicki sadrzaj)
+rtpp_app/static/img/invoices/*
+!rtpp_app/static/img/invoices/.gitkeep
+
+# Izvjestaji generisani u toku rada
+*.xlsx
+!docs/**/*.xlsx
+
+# Alati i IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

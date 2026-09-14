@@ -1,0 +1,60 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="card">
+  <h2>User Management</h2>
+
+  <form method="POST" action="{{ url_for('admin.add_user') }}">
+    <div class="form-group">
+      <label>First Name</label>
+      <input type="text" name="firstName" required>
+    </div>
+    <div class="form-group">
+      <label>Last Name</label>
+      <input type="text" name="lastName" required>
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" name="email" required>
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      <select name="role">
+        <option value="employee">Employee</option>
+        <option value="admin">Administrator</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-green">Add User</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.firstName }} {{ user.lastName }}</td>
+        <td>{{ user.email }}</td>
+        <td>
+          <span class="badge {% if user.role == 'admin' %}badge-admin{% else %}badge-user{% endif %}">
+            {{ user.role|capitalize }}
+          </span>
+        </td>
+        <td>
+          <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}"
+                onsubmit="return confirm('Are you sure you want to delete this user?');">
+            <button type="submit" class="btn-grey">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
